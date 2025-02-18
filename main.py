@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from database import collection
 from pymongo.errors import DuplicateKeyError
+from bson import ObjectId
 import bcrypt
 from models.userModel import User
 
@@ -12,6 +13,22 @@ def hash_password(password: str) -> str:
     salt = bcrypt.gensalt()
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
     return hashed_password.decode('utf-8')
+
+
+# Delete user by id 
+@app.delete("/delete/{user_id}")
+async def delete_userId(user_id: str):
+    try:
+        obj_id = ObjectId(user_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid user Id format")
+
+    result = collection.delete_one({"_id": obj_id})
+
+    if result.deleted_count > 0:
+        return {"message": "User data deleted successfully"}
+    raise HTTPException(status_code=404, detail="User not found")
+
 
 # Create user 
 @app.post("/user")
@@ -65,3 +82,4 @@ async def delete_user(name: str):
     if result.deleted_count > 0:
         return {"message": "User data deleted successfully"}
     raise HTTPException(status_code=404, detail="User not found")
+
